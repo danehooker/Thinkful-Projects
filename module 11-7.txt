@@ -1,0 +1,43 @@
+select * from sfo_listings
+ORDER BY price DESC
+LIMIT 1;
+
+
+
+
+select neighbourhood, sum(cast (availability_365 as integer))/count(*)
+FROM sfo_listings
+Group by 1
+order by 2;
+
+
+
+WITH mos AS 
+	(SELECT price::money, calender_date, extract(month from calender_date) AS mo
+	FROM sfo_calendar
+	WHERE price IS NOT NULL)
+SELECT sum(price)/count(*) AS avg_price, mo From mos
+GROUP BY mo
+ORDER BY avg_price DESC;
+
+
+
+
+
+
+WITH avail as(
+	SELECT extract(month from calender_date) as mo, available, count(*)::real as avail_count
+	FROM sfo_calendar
+	WHERE available like 't'
+	GROUP BY 1, 2),
+
+tot as(
+	SELECT extract(month from calender_date) as mo, count(*)::real as tot_count
+	FROM sfo_calendar
+	GROUP BY 1)
+	
+SELECT tot.mo, tot.tot_count, avail.avail_count, (avail.avail_count/tot.tot_count) as ratio
+FROM tot
+JOIN avail
+ON tot.mo = avail.mo
+ORDER BY ratio;
